@@ -30,10 +30,7 @@ PythonProject1/
 │   ├── __init__.py
 │   └── emulator.py
 ├── tests/
-│   ├── __init__.py
-│   └── test_emulator.py
-├── demo/
-│   └── stage1_session.txt
+│   └── __init__.py
 ├── README.md
 ├── .gitignore
 └── run.sh
@@ -63,14 +60,6 @@ vfs$ ls "unterminated
 
 - `Ctrl+D` — выход из REPL
 - `Ctrl+C` — прерывание текущей строки, возврат к приглашению
-
-Полный пример интерактивной сессии сохранён в `demo/stage1_session.txt`.
-
-## Тесты
-
-```bash
-python3 -m unittest discover -s tests -v
-```
 
 ## Этапы
 

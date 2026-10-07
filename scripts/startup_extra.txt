@@ -1,0 +1,50 @@
+# Этап 5: chmod, cp, help — режимы, VFS и ошибки.
+
+# --- help ---
+help
+help ignored
+
+# --- chmod ---
+ls -l /etc/config.cfg
+chmod 600 /etc/config.cfg
+ls -l /etc/config.cfg
+chmod 755 /home /var
+ls -l /
+chmod 644 /home/user/docs/report.txt /etc/config.cfg
+ls -l /home/user/docs/report.txt
+ls -l /etc/config.cfg
+
+# --- cp файл ---
+cp /etc/config.cfg /config.bak
+ls /
+cat /config.bak
+cp /etc/config.cfg /home
+ls /home
+cat /home/config.cfg
+
+# --- cp каталог ---
+cp /home/user /home/user_copy
+ls /home
+ls /home/user_copy
+cat /home/user_copy/docs/report.txt
+
+# --- cp с перезаписью файла ---
+cp /var/log/app.log /config.bak
+cat /config.bak
+
+# --- ошибки chmod ---
+chmod
+chmod 999 /etc/config.cfg
+chmod abc /etc/config.cfg
+chmod 644 /no/such
+chmod 644
+
+# --- ошибки cp ---
+cp
+cp /etc/config.cfg
+cp /no/such /tmp_copy
+cp /etc/config.cfg /no/dir/file
+cp /etc/config.cfg /home
+cp /home/shared /var
+
+exit

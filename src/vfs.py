@@ -12,6 +12,13 @@ CURRENT_DIR = "."
 HIDDEN_PREFIX = "."
 DIR_MARK = "<dir>"
 FILE_MARK = "<file>"
+DEFAULT_FILE_MODE = 0o644
+DEFAULT_DIR_MODE = 0o755
+MODE_BITS = 0o777
+OCTAL_BASE = 8
+MODE_WIDTH = 3
+CP_ARG_COUNT = 2
+CHMOD_MIN_ARGS = 2
 
 
 class VfsError(Exception):
@@ -26,12 +33,28 @@ class VfsNode:
         name: str,
         is_dir: bool,
         content: bytes | None = None,
+        mode: int | None = None,
     ) -> None:
         """Создаёт узел без обращения к диску."""
         self.name = name
         self.is_dir = is_dir
         self.content = content if content is not None else b""
+        if mode is None:
+            mode = DEFAULT_DIR_MODE if is_dir else DEFAULT_FILE_MODE
+        self.mode = mode
         self.children: dict[str, VfsNode] = {}
+
+    def clone(self, name: str | None = None) -> "VfsNode":
+        """Глубокая копия узла в памяти."""
+        node = VfsNode(
+            name=self.name if name is None else name,
+            is_dir=self.is_dir,
+            content=bytes(self.content),
+            mode=self.mode,
+        )
+        for child_name, child in self.children.items():
+            node.children[child_name] = child.clone()
+        return node
 
 
 def _read_file(path: Path) -> bytes:
@@ -208,8 +231,75 @@ class VirtualFileSystem:
         if not long_mode:
             return name
         mark = DIR_MARK if node.is_dir else FILE_MARK
+        mode = format(node.mode & MODE_BITS, f"0{MODE_WIDTH}o")
         size = len(node.content)
-        return f"{mark}\t{size}\t{name}"
+        return f"{mark}\t{mode}\t{size}\t{name}"
+
+    def chmod(self, path: str, mode: int) -> None:
+        """Меняет права доступа узла только в памяти."""
+        node = self.get_node(path)
+        node.mode = mode & MODE_BITS
+
+    def copy(self, source: str, dest: str) -> None:
+        """Копирует файл или каталог внутри VFS в памяти."""
+        src_node = self.get_node(source)
+        dest_parts = self._split_parts(dest)
+        if not dest_parts:
+            raise VfsError(f"{dest}: нельзя заменить корень")
+        try:
+            dest_node = self.get_node(dest)
+        except VfsError:
+            dest_node = None
+        if dest_node is not None and dest_node.is_dir:
+            self._put_child(
+                dest_parts,
+                src_node.name,
+                src_node,
+                overwrite=False,
+            )
+            return
+        parent_parts = dest_parts[:-1]
+        new_name = dest_parts[-1]
+        self._put_child(
+            parent_parts,
+            new_name,
+            src_node,
+            overwrite=True,
+        )
+
+    def _put_child(
+        self,
+        parent_parts: list[str],
+        name: str,
+        src_node: VfsNode,
+        overwrite: bool,
+    ) -> None:
+        """Кладёт копию узла в каталог-родитель в памяти."""
+        parent = self._node_by_parts(parent_parts)
+        if not parent.is_dir:
+            raise VfsError("путь назначения не каталог")
+        existing = parent.children.get(name)
+        if existing is not None and not overwrite:
+            raise VfsError(f"{name}: уже существует")
+        if existing is not None and existing.is_dir:
+            raise VfsError(f"{name}: это каталог")
+        parent.children[name] = src_node.clone(name=name)
+
+    def _node_by_parts(self, parts: list[str]) -> VfsNode:
+        """Возвращает узел по уже нормализованным частям пути."""
+        node = self.root
+        built: list[str] = []
+        for piece in parts:
+            if not node.is_dir:
+                raise VfsError("путь не является каталогом")
+            child = node.children.get(piece)
+            if child is None:
+                path = ROOT_PATH + "/".join(built + [piece])
+                text = f"{path}: нет такого файла или каталога"
+                raise VfsError(text)
+            node = child
+            built.append(piece)
+        return node
 
     def _resolve(self, path: str) -> tuple[VfsNode, list[str]]:
         """Разыменовывает абсолютный или относительный путь."""

@@ -1,4 +1,4 @@
-"""Эмулятор командной оболочки ОС. Этап 4: основные команды."""
+"""Эмулятор командной оболочки ОС. Этап 5: доп. команды."""
 
 import shlex
 from pathlib import Path
@@ -6,7 +6,11 @@ from pathlib import Path
 from src.config import parse_args, print_config
 from src.logger import XmlCommandLogger
 from src.vfs import (
+    CHMOD_MIN_ARGS,
+    CP_ARG_COUNT,
     MAX_CD_ARGS,
+    MODE_BITS,
+    OCTAL_BASE,
     ROOT_PATH,
     VfsError,
     VirtualFileSystem,
@@ -16,6 +20,18 @@ from src.vfs import (
 DEFAULT_VFS_NAME = "vfs"
 COMMENT_PREFIX = "#"
 EMPTY_ARG_COUNT = 0
+
+HELP_TEXT = {
+    "ls": "список файлов и каталогов VFS (-l, -a)",
+    "cd": "смена текущего каталога VFS",
+    "echo": "печать аргументов",
+    "cat": "вывод содержимого файлов",
+    "rev": "строки файлов в обратном порядке",
+    "chmod": "смена прав доступа в памяти VFS",
+    "cp": "копирование файла или каталога в памяти",
+    "help": "список команд и кратких описаний",
+    "exit": "выход из эмулятора",
+}
 
 
 class ShellEmulator:
@@ -40,6 +56,9 @@ class ShellEmulator:
             "echo": self.cmd_echo,
             "cat": self.cmd_cat,
             "rev": self.cmd_rev,
+            "chmod": self.cmd_chmod,
+            "cp": self.cmd_cp,
+            "help": self.cmd_help,
             "exit": self.cmd_exit,
         }
 
@@ -141,6 +160,49 @@ class ShellEmulator:
             return
         for line in text.splitlines():
             print(line[::-1] if reverse else line)
+
+    def cmd_chmod(self, args: list[str]) -> None:
+        """Меняет права доступа узлов VFS только в памяти."""
+        if len(args) < CHMOD_MIN_ARGS:
+            print("chmod: нужны режим и путь")
+            return
+        try:
+            mode = self._parse_mode(args[0])
+        except VfsError as error:
+            print(f"chmod: {error}")
+            return
+        for path in args[1:]:
+            try:
+                self.vfs.chmod(path, mode)
+            except VfsError as error:
+                print(f"chmod: {error}")
+
+    def _parse_mode(self, text: str) -> int:
+        """Разбирает восьмеричный режим доступа."""
+        try:
+            mode = int(text, OCTAL_BASE)
+        except ValueError as error:
+            message = f"неверный режим доступа: {text}"
+            raise VfsError(message) from error
+        return mode & MODE_BITS
+
+    def cmd_cp(self, args: list[str]) -> None:
+        """Копирует файл или каталог внутри VFS в памяти."""
+        if len(args) != CP_ARG_COUNT:
+            print("cp: нужны источник и назначение")
+            return
+        source, dest = args
+        try:
+            self.vfs.copy(source, dest)
+        except VfsError as error:
+            print(f"cp: {error}")
+
+    def cmd_help(self, args: list[str]) -> None:
+        """Печатает список команд и краткие описания."""
+        if args:
+            print("help: аргументы не используются")
+        for name in sorted(HELP_TEXT):
+            print(f"{name} — {HELP_TEXT[name]}")
 
     def cmd_exit(self, args: list[str]) -> None:
         """Завершает работу эмулятора."""

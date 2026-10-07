@@ -1,0 +1,11 @@
+# Ошибки команд, VFS и разбора ввода.
+
+ls missing
+ls -z
+cd missing
+cd hello.txt
+cd a b
+unknown_command
+ls "unterminated
+cd /
+exit

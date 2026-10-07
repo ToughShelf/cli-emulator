@@ -1,0 +1,10 @@
+# Успешные команды на VFS с несколькими файлами.
+
+ls
+ls -l
+ls data
+cd data
+ls
+cd ..
+cd /
+exit

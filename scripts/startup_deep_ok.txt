@@ -1,0 +1,10 @@
+# Успешные команды на глубоком VFS (3+ уровня).
+
+ls
+ls -l home
+cd /home/user/docs
+ls
+cd ..
+ls -a
+cd /
+exit

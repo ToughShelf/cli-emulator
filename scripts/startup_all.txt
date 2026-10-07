@@ -1,0 +1,39 @@
+# Полный набор команд этапов 1-3, режимы ls/cd и ошибки VFS.
+
+# Обычный и подробный ls в корне.
+ls
+ls -l
+ls -a
+ls -la
+
+# Несколько путей и файл как аргумент.
+ls home etc
+ls /home/user/docs/report.txt
+ls -l /home/user/docs/report.txt
+
+# Переходы по дереву не менее чем из трёх уровней.
+cd /home/user/docs
+ls
+cd ..
+ls
+cd /
+cd home/user
+ls -a
+cd ../../..
+ls
+
+# cd без аргументов возвращает в корень.
+cd /home
+cd
+ls
+
+# Неизвестная команда и ошибки VFS.
+foobar
+ls /no/such
+cd /no/such
+cd /home/user/docs/report.txt
+cd one two
+ls -z
+ls "unterminated
+
+exit

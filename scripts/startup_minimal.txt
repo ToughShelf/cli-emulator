@@ -1,0 +1,9 @@
+# Успешные команды на минимальном VFS.
+
+ls
+ls -l
+ls hello.txt
+ls -l hello.txt
+cd /
+ls -a
+exit

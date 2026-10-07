@@ -150,6 +150,17 @@ class VirtualFileSystem:
         node, _parts = self._resolve(path)
         return node
 
+    def read_text(self, path: str) -> str:
+        """Читает текстовое содержимое файла из VFS в памяти."""
+        node = self.get_node(path)
+        if node.is_dir:
+            raise VfsError(f"{path}: это каталог")
+        try:
+            return node.content.decode("utf-8")
+        except UnicodeDecodeError as error:
+            text = f"{path}: не удалось декодировать как UTF-8"
+            raise VfsError(text) from error
+
     def format_listing(
         self,
         node: VfsNode,

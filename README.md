@@ -1,7 +1,7 @@
 # Shell Emulator — эмулятор командной оболочки ОС
 
 Учебный проект: эмулятор оболочки UNIX-подобной ОС (Вариант 29).
-Этап 3 — виртуальная файловая система (VFS).
+Этап 4 — основные команды.
 
 ## Требования
 
@@ -21,7 +21,7 @@ chmod +x run.sh
 python3 -m src.emulator \
     --vfs vfs/deep \
     --log logs/session.xml \
-    --script scripts/startup_all.txt
+    --script scripts/startup_commands.txt
 ```
 
 | Параметр   | Назначение                          |
@@ -45,25 +45,16 @@ PythonProject1/
 │   ├── main.py
 │   └── vfs.py
 ├── scripts/
-│   ├── startup_empty.txt
-│   ├── startup_minimal.txt
-│   ├── startup_ok.txt
-│   ├── startup_deep_ok.txt
-│   ├── startup_errors.txt
-│   └── startup_all.txt
+│   ├── startup_commands.txt
+│   ├── startup_all.txt
+│   └── ...
 ├── os_scripts/
-│   ├── test_defaults.sh
-│   ├── test_params.sh
-│   ├── test_errors.sh
-│   ├── test_vfs_variants.sh
-│   ├── test_vfs_ok.sh
-│   └── test_vfs_errors.sh
+│   ├── test_commands.sh
+│   └── ...
 ├── vfs/
 │   ├── minimal/
 │   ├── several/
 │   └── deep/
-├── tests/
-│   └── __init__.py
 ├── README.md
 ├── .gitignore
 └── run.sh
@@ -71,11 +62,8 @@ PythonProject1/
 
 ## VFS
 
-Источник VFS — директория на диске. При старте дерево каталогов и
-содержимое файлов копируются в память; исходная директория не
-изменяется. Все операции `ls` и `cd` работают только с копией в памяти.
-
-Варианты для проверки:
+Источник VFS — директория на диске. Дерево копируется в память; исходник
+не изменяется. Команды работают только с копией в памяти.
 
 | Каталог        | Описание                                      |
 |----------------|-----------------------------------------------|
@@ -89,49 +77,44 @@ PythonProject1/
 |---------|----------|--------|
 | `ls [opts] [path...]` | Список файлов/каталогов VFS | `ls -la /home` |
 | `cd [path]` | Смена текущего каталога VFS | `cd /home/user` |
+| `echo [args...]` | Печать аргументов | `echo hello` |
+| `cat file...` | Печать содержимого файлов | `cat a.txt` |
+| `rev file...` | Строки файла наоборот | `rev a.txt` |
 | `exit` | Выход из эмулятора | `exit` |
 
 Ключи `ls`: `-l` (подробный вывод), `-a` (скрытые записи).
 
-## Стартовый скрипт
+## Стартовый скрипт этапа 4
 
-Файл выполняется до интерактивного режима. Комментарии — как в Python
-(`#`). На экран выводятся приглашение с командой и ответ эмулятора.
+```bash
+python3 -m src.emulator \
+    --vfs vfs/deep \
+    --log logs/commands.xml \
+    --script scripts/startup_commands.txt
+```
 
-Полный сценарий этапов 1–3: `scripts/startup_all.txt`.
+Или: `./os_scripts/test_commands.sh`
 
 ## Журнал XML
 
-Каждое событие вызова команды содержит дату и время, имя пользователя,
-имя команды и аргументы.
-
-## Проверка
-
-```bash
-chmod +x os_scripts/*.sh
-./os_scripts/test_defaults.sh
-./os_scripts/test_params.sh
-./os_scripts/test_errors.sh
-./os_scripts/test_vfs_variants.sh
-./os_scripts/test_vfs_ok.sh
-./os_scripts/test_vfs_errors.sh
-```
+Каждое событие содержит дату и время, имя пользователя, команду и
+аргументы.
 
 ## Этапы
 
 ### Этап 1 — REPL
 
-- CLI, приглашение с именем VFS, парсер, `ls`/`cd`/`exit`
+- CLI, приглашение, парсер, `ls`/`cd`/`exit`
 
 ### Этап 2 — конфигурация
 
-- Параметры `--vfs`, `--log`, `--script`
-- Отладочный вывод параметров
-- XML-лог вызовов команд
-- Стартовый скрипт с комментариями
+- `--vfs`, `--log`, `--script`, XML-лог, стартовый скрипт
 
-### Этап 3 — VFS (текущий)
+### Этап 3 — VFS
 
-- Загрузка VFS из директории в память
-- Рабочие `ls` и `cd` по дереву VFS
-- Тестовые варианты: minimal, several, deep
+- Загрузка директории в память, рабочие `ls`/`cd`
+
+### Этап 4 — основные команды (текущий)
+
+- Логика `ls` и `cd`
+- Команды `echo`, `cat`, `rev`

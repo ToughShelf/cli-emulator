@@ -1,0 +1,59 @@
+# Этап 4: ls, cd, echo, cat, rev — режимы, VFS и ошибки.
+
+# --- ls ---
+ls
+ls -l
+ls -a
+ls -la
+ls home etc
+ls /home/user/docs/report.txt
+ls -l /home/user/docs/report.txt
+
+# --- cd ---
+cd /home/user/docs
+ls
+cd ..
+ls -a
+cd /
+cd home/user
+cd ../../..
+cd /home
+cd
+ls
+
+# --- echo ---
+echo
+echo hello
+echo hello world
+echo "quoted text"
+echo -n not a flag here
+
+# --- cat ---
+cat /home/user/docs/report.txt
+cat /etc/config.cfg
+cat /home/shared/readme.txt /var/log/app.log
+cd /home/user/docs
+cat report.txt
+cd /
+
+# --- rev ---
+rev /home/user/docs/report.txt
+rev /etc/config.cfg
+rev /home/shared/readme.txt /var/log/app.log
+
+# --- ошибки ---
+foobar
+ls /no/such
+ls -z
+cd /no/such
+cd /home/user/docs/report.txt
+cd one two
+cat
+cat /no/such
+cat /home
+rev
+rev /no/such
+rev /home
+ls "unterminated
+
+exit

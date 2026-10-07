@@ -1,4 +1,4 @@
-"""Эмулятор командной оболочки ОС. Этап 3: VFS."""
+"""Эмулятор командной оболочки ОС. Этап 4: основные команды."""
 
 import shlex
 from pathlib import Path
@@ -15,10 +15,11 @@ from src.vfs import (
 
 DEFAULT_VFS_NAME = "vfs"
 COMMENT_PREFIX = "#"
+EMPTY_ARG_COUNT = 0
 
 
 class ShellEmulator:
-    """Интерактивный прототип оболочки с командами-заглушками."""
+    """Эмулятор оболочки с командами UNIX-подобного CLI."""
 
     def __init__(
         self,
@@ -36,6 +37,9 @@ class ShellEmulator:
         self.commands = {
             "ls": self.cmd_ls,
             "cd": self.cmd_cd,
+            "echo": self.cmd_echo,
+            "cat": self.cmd_cat,
+            "rev": self.cmd_rev,
             "exit": self.cmd_exit,
         }
 
@@ -106,6 +110,37 @@ class ShellEmulator:
             self.vfs.change_dir(target)
         except VfsError as error:
             print(f"cd: {error}")
+
+    def cmd_echo(self, args: list[str]) -> None:
+        """Печатает аргументы, разделённые пробелами."""
+        print(" ".join(args))
+
+    def cmd_cat(self, args: list[str]) -> None:
+        """Печатает содержимое файлов из VFS."""
+        if len(args) == EMPTY_ARG_COUNT:
+            print("cat: не указан файл")
+            return
+        for path in args:
+            self._print_file(path, reverse=False)
+
+    def cmd_rev(self, args: list[str]) -> None:
+        """Печатает строки файлов в обратном порядке символов."""
+        if len(args) == EMPTY_ARG_COUNT:
+            print("rev: не указан файл")
+            return
+        for path in args:
+            self._print_file(path, reverse=True)
+
+    def _print_file(self, path: str, reverse: bool) -> None:
+        """Читает файл VFS и печатает его текст или ошибки."""
+        try:
+            text = self.vfs.read_text(path)
+        except VfsError as error:
+            name = "rev" if reverse else "cat"
+            print(f"{name}: {error}")
+            return
+        for line in text.splitlines():
+            print(line[::-1] if reverse else line)
 
     def cmd_exit(self, args: list[str]) -> None:
         """Завершает работу эмулятора."""

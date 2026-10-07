@@ -1,10 +1,17 @@
-"""Эмулятор командной оболочки ОС. Этап 2: конфигурация."""
+"""Эмулятор командной оболочки ОС. Этап 3: VFS."""
 
 import shlex
 from pathlib import Path
 
 from src.config import parse_args, print_config
 from src.logger import XmlCommandLogger
+from src.vfs import (
+    MAX_CD_ARGS,
+    ROOT_PATH,
+    VfsError,
+    VirtualFileSystem,
+    parse_ls_args,
+)
 
 DEFAULT_VFS_NAME = "vfs"
 COMMENT_PREFIX = "#"
@@ -24,6 +31,7 @@ class ShellEmulator:
         self.script_path = script_path
         self.vfs_name = self._vfs_name(vfs_path)
         self.logger = XmlCommandLogger(log_path)
+        self.vfs = self._create_vfs(vfs_path)
         self.running = True
         self.commands = {
             "ls": self.cmd_ls,
@@ -40,13 +48,64 @@ class ShellEmulator:
             return name
         return DEFAULT_VFS_NAME
 
+    def _create_vfs(self, vfs_path: str | None) -> VirtualFileSystem:
+        """Загружает VFS в память или создаёт пустое дерево."""
+        try:
+            return VirtualFileSystem.load(vfs_path)
+        except VfsError as error:
+            print(f"VFS: {error}")
+            return VirtualFileSystem.empty()
+
+    def prompt(self) -> str:
+        """Собирает приглашение с именем VFS и текущим путём."""
+        return f"{self.vfs_name}:{self.vfs.cwd_path}$ "
+
     def cmd_ls(self, args: list[str]) -> None:
-        """Заглушка ls: печатает имя команды и аргументы."""
-        print(f"[ls] аргументы: {args}")
+        """Печатает содержимое каталога или файл из VFS."""
+        try:
+            long_mode, all_mode, paths = parse_ls_args(args)
+        except VfsError as error:
+            print(f"ls: {error}")
+            return
+        if not paths:
+            paths = [self.vfs.cwd_path]
+        show_header = len(paths) > 1
+        for path in paths:
+            self._ls_one(path, long_mode, all_mode, show_header)
+
+    def _ls_one(
+        self,
+        path: str,
+        long_mode: bool,
+        all_mode: bool,
+        show_header: bool,
+    ) -> None:
+        """Печатает результат ls для одного пути."""
+        try:
+            node = self.vfs.get_node(path)
+            lines = self.vfs.format_listing(
+                node,
+                long_mode,
+                all_mode,
+            )
+        except VfsError as error:
+            print(f"ls: {error}")
+            return
+        if show_header:
+            print(f"{path}:")
+        for line in lines:
+            print(line)
 
     def cmd_cd(self, args: list[str]) -> None:
-        """Заглушка cd: печатает имя команды и аргументы."""
-        print(f"[cd] аргументы: {args}")
+        """Меняет текущий каталог внутри VFS в памяти."""
+        if len(args) > MAX_CD_ARGS:
+            print("cd: слишком много аргументов")
+            return
+        target = args[0] if args else ROOT_PATH
+        try:
+            self.vfs.change_dir(target)
+        except VfsError as error:
+            print(f"cd: {error}")
 
     def cmd_exit(self, args: list[str]) -> None:
         """Завершает работу эмулятора."""
@@ -107,7 +166,7 @@ class ShellEmulator:
             if self._is_ignored_line(raw_line):
                 continue
             command_line = raw_line.rstrip("\n")
-            print(f"{self.vfs_name}$ {command_line}")
+            print(f"{self.prompt()}{command_line}")
             self.execute(command_line)
 
     def _is_ignored_line(self, line: str) -> bool:
@@ -121,7 +180,7 @@ class ShellEmulator:
         """Запускает цикл чтения команд из стандартного ввода."""
         while self.running:
             try:
-                line = input(f"{self.vfs_name}$ ")
+                line = input(self.prompt())
             except EOFError:
                 print()
                 break

@@ -3,7 +3,7 @@
 from datetime import datetime
 from getpass import getuser
 from pathlib import Path
-from xml.etree import ElementTree as ET
+from xml.etree import ElementTree as et
 
 LOG_ROOT_TAG = "log"
 EVENT_TAG = "event"
@@ -32,25 +32,25 @@ class XmlCommandLogger:
         path = Path(self.log_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         root = self._load_root(path)
-        event = ET.SubElement(root, EVENT_TAG)
-        ET.SubElement(event, "timestamp").text = (
+        event = et.SubElement(root, EVENT_TAG)
+        et.SubElement(event, "timestamp").text = (
             datetime.now().isoformat(timespec="seconds")
         )
-        ET.SubElement(event, "user").text = current_user()
-        ET.SubElement(event, "command").text = command
-        ET.SubElement(event, "args").text = " ".join(args)
-        ET.indent(root)
-        tree = ET.ElementTree(root)
+        et.SubElement(event, "user").text = current_user()
+        et.SubElement(event, "command").text = command
+        et.SubElement(event, "args").text = " ".join(args)
+        et.indent(root)
+        tree = et.ElementTree(root)
         tree.write(path, encoding="utf-8", xml_declaration=True)
 
-    def _load_root(self, path: Path) -> ET.Element:
+    def _load_root(self, path: Path) -> et.Element:
         """Читает корень журнала или создаёт пустой документ."""
         if not path.is_file():
-            return ET.Element(LOG_ROOT_TAG)
+            return et.Element(LOG_ROOT_TAG)
         try:
-            root = ET.parse(path).getroot()
-        except ET.ParseError:
-            return ET.Element(LOG_ROOT_TAG)
+            root = et.parse(path).getroot()
+        except et.ParseError:
+            return et.Element(LOG_ROOT_TAG)
         if root.tag != LOG_ROOT_TAG:
-            return ET.Element(LOG_ROOT_TAG)
+            return et.Element(LOG_ROOT_TAG)
         return root
